@@ -1,0 +1,108 @@
+{
+  "etkinlik_turu": "Düğün Töreni",
+  "ana_baslik": "Bu mutlu günümüzde sizleri aramızda görmekten onur duyarız.",
+  "davet_sahibi_isimleri": "Ayşe & Ahmet",
+  "davet_metni": "Hayatımızın en özel gününde sizleri de aramızda görmekten mutluluk duyarız.",
+  "tarih": "2026-09-12T19:00",
+  "hero_video_url": "",
+  "lock_screen": true,
+  "lock_button_text": "Davetiyeyi Aç",
+  "scroll_indicator": true,
+  "fonts": {
+    "heading": "Marcellus",
+    "body": "Raleway",
+    "arabic": "Amiri"
+  },
+  "gelin": {
+    "ad": "Ayşe",
+    "anne": "Meryem",
+    "baba": "Mustafa Yılmaz"
+  },
+  "damat": {
+    "ad": "Ahmet",
+    "anne": "Fatma",
+    "baba": "Ali Kaya"
+  },
+  "aileler": "Meryem & Mustafa Yılmaz - Fatma & Ali Kaya",
+  "arka_plan": {
+    "url": "https://picsum.photos/1920/1080",
+    "tip": "image"
+  },
+  "muzik": {
+    "url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+  },
+  "galeri": {
+    "fotograflar": [
+      "https://picsum.photos/800/600?random=1",
+      "https://picsum.photos/800/600?random=2",
+      "https://picsum.photos/800/600?random=3"
+    ]
+  },
+  "program": [
+    {
+      "saat": "18:00",
+      "baslik": "Gelin Alma"
+    },
+    {
+      "saat": "19:00",
+      "baslik": "Salona Giriş & Nikah"
+    },
+    {
+      "saat": "20:00",
+      "baslik": "Takı Töreni"
+    },
+    {
+      "saat": "20:30",
+      "baslik": "Yemek ve İkram"
+    },
+    {
+      "saat": "21:15",
+      "baslik": "Eğlence Programı"
+    },
+    {
+      "saat": "23:00",
+      "baslik": "Kapanış / After Party"
+    }
+  ],
+  "mekan": {
+    "adi": "Kır Bahçesi Rüya Salonu",
+    "adres": "Atatürk Mahallesi, Sahil Yolu Caddesi No:45, Samsun",
+    "harita_linki": "https://maps.google.com",
+    "kiyafet_kodu": "Semi-Formal / Beyaz Konsept"
+  },
+  "sss": [
+    {
+      "soru": "Otopark ve vale hizmeti var mı?",
+      "cevap": "Evet, 200 araçlık ücretsiz otopark ve vale mevcuttur."
+    },
+    {
+      "soru": "Çocuklar için oyun alanı bulunuyor mu?",
+      "cevap": "Evet, çocuk oyun alanı ve çocuk animatörü mevcuttur."
+    },
+    {
+      "soru": "Yemek menüsü içeriği nedir?",
+      "cevap": "Beyaz et ana menü, ordövr tabağı ve sınırsız meşrubat servisi vardır."
+    }
+  ],
+  "rsvp": {
+    "son_tarih": "2026-09-01",
+    "secenekler": [
+      "Katılıyorum",
+      "Katılamıyorum",
+      "Kişi Sayısı Belirteceğim"
+    ],
+    "alerji_menu_aktif": true,
+    "aile_isimleri": "Meryem & Mustafa Yılmaz - Fatma & Ali Kaya",
+    "sosyal_medya_hashtag": "#AyşeAhmetEvleniyor"
+  },
+  "besmele": "Bismillahirrahmanirrahim",
+  "ayet": {
+    "metin": "Ve min kulli şey'in halakna zevceyni leallekum tezekkerun",
+    "meal": "Biz her şeyi çift çift yarattık ki düşünesiniz.",
+    "sure": "Zariyat Suresi, 49. Ayet"
+  },
+  "dualar": [],
+  "slide_backgrounds": {},
+  "op_numarasi": "OP-260706-1004",
+  "olusturan": "RMZN AI"
+}
