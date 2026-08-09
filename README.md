@@ -101,6 +101,26 @@ davetiye-sistemi/
 
 ---
 
+## 🔗 Canlı Siteden GitHub'a Kaydetme
+
+GitHub Pages statik olduğu için `/save` çalışmaz. Bunun yerine sistem **GitHub Contents API**'sini kullanır:
+
+1. Editörde **🔗 GitHub** düğmesine bas.
+2. Bir **kişisel erişim (PAT) token'ı** oluştur: `github.com/settings/tokens` → **repo** yetkisi ver.
+3. Token'ı yapıştır → **Bağlan** (yalnızca tarayıcının localStorage'ında saklanır, repo'ya yazılmaz).
+4. Artık **💾 data/ Kaydet** butonu dosyayı doğrudan `import/` klasörüne commit eder; **🚀 cikti/ HTML** da aynı şekilde repo'ya gider.
+5. Ana liste (`index.html`) GitHub bağlıysa dosyaları canlı GitHub'dan listeler; bağlı değilse `list_fallback.json`'u kullanır.
+
+> 🔒 Güvenlik: PAT token'ı yalnızca tarayıcında gizli tutulur ve yalnızca senin oturumunda çalışır. Bir başkası sayfayı açsa dahi token'ı görmez.
+
+### Medya (video / görsel / müzik)
+
+- Dosyalar **base64** olarak davetiye verisine gömülür; böylece üretilen HTML tek dosya olarak taşınabilir kalır.
+- Tek dosya GitHub API limiti **100 MB**'tır (base64'e çevrilince ~75 MB video sığar).
+- Repo önerilen boyut **~1 GB** (5 GB sert limit). Büyük videolarda repo şişer; büyük arşiv için yerel akış + ayrı repo önerilir.
+
+---
+
 ## 🔁 Git
 
 ```bash

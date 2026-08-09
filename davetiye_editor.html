@@ -102,6 +102,7 @@ textarea{resize:vertical;min-height:36px}
   <a class="btn" href="index.html" title="Ana Liste">🏠</a>
   <button class="btn" onclick="loadJSON()">📂 JSON Yükle</button>
   <button class="btn" onclick="openImport()">📥 İçe Aktar</button>
+  <button class="btn" onclick="toggleGh()" id="ghBtn">🔗 GitHub</button>
   <button class="btn go" onclick="saveJSON()">💾 data/ Kaydet</button>
   <button class="btn" onclick="exportHTML()">🚀 cikti/ HTML</button>
   <button class="btn" onclick="resetAll()">↺ Sıfırla</button>
@@ -118,6 +119,15 @@ textarea{resize:vertical;min-height:36px}
     <button class="btn" onclick="doImport()">⚠️ İçe Aktar</button>
     <button class="btn danger" onclick="toggleImport(false)">✕</button>
   </div>
+</div>
+<div id="githubBar" style="display:none;padding:.4rem .9rem;border-bottom:1px solid var(--border);background:rgba(10,14,26,.5)">
+  <div style="display:flex;gap:.4rem;align-items:center">
+    <label style="margin:0;white-space:nowrap;font-size:.62rem">🔗 GitHub Token (PAT)</label>
+    <input type="password" id="ghToken" placeholder="github_pat_..." style="flex:1;font-size:.62rem;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.3rem .5rem;color:var(--text)">
+    <button class="btn" onclick="ghConnect()" style="font-size:.6rem">Bağlan</button>
+    <button class="btn danger" onclick="ghDisconnect()" style="font-size:.6rem">✕</button>
+  </div>
+  <div style="font-size:.55rem;color:var(--dim);margin-top:.25rem" id="ghInfo"></div>
 </div>
 </div>
 <div class="preview" id="previewWrap">
@@ -512,8 +522,74 @@ function convertIndex(idx){
   currentData=d;
 }
 
+/* GITHUB BAGLANTI (Contents API) */
+const GH_OWNER='rmznylmz55-ship-it';
+const GH_REPO='davetiye-sistemi';
+const GH_BRANCH='main';
+function ghToken(){return localStorage.getItem('gh_token')||'';}
+window.toggleGh=function(){
+  var bar=document.getElementById('githubBar');
+  bar.style.display=bar.style.display==='block'?'none':'block';
+  if(bar.style.display==='block'){document.getElementById('ghToken').value=ghToken();ghRefresh();}
+};
+window.ghConnect=function(){
+  var tok=document.getElementById('ghToken').value.trim();
+  if(!tok){toast('Token gir');return;}
+  localStorage.setItem('gh_token',tok);
+  ghRefresh();
+  toast('GitHub bağlandı ✓');
+};
+window.ghDisconnect=function(){
+  localStorage.removeItem('gh_token');
+  document.getElementById('ghToken').value='';
+  document.getElementById('ghInfo').textContent='';
+  toast('GitHub bağlantısı kaldırıldı');
+};
+function ghRefresh(){
+  var info=document.getElementById('ghInfo');
+  if(!ghToken()){info.textContent='Token yok — kayıtlar sunucu/indirme yoluyla gider.';return;}
+  fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO,
+    {headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+ghToken()}})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(j){info.textContent='✅ '+j.full_name+' — '+j.default_branch+' dalına yazılır.';document.getElementById('ghBtn').textContent='🔗 GitHub ✓';})
+    .catch(function(){info.textContent='❌ Bağlanamadı. Token geçersiz veya yetki yok.';});
+}
+function ghApi(path,method,body){
+  var opt={method:method||'GET',headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+ghToken()}};
+  if(body)opt.body=JSON.stringify(body);
+  return fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/'+path,opt);
+}
+function b64(s){
+  var bytes=new TextEncoder().encode(s);var bin='';
+  bytes.forEach(function(b){bin+=String.fromCharCode(b);});
+  return btoa(bin);
+}
+/* GitHub'a dosya yaz: mevcut sha varsa günceller, yoksa yeni oluşturur */
+function ghPut(relPath,content,msg,okCb,errCb){
+  ghApi('contents/'+relPath).then(function(r){
+    if(r.status===404)return null;
+    if(!r.ok)throw 0;
+    return r.json();
+  }).then(function(cur){
+    var body={message:msg||('güncelle: '+relPath),content:b64(content),branch:GH_BRANCH};
+    if(cur&&cur.sha)body.sha=cur.sha;
+    return ghApi('contents/'+relPath,'PUT',body);
+  }).then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(function(){if(okCb)okCb();})
+    .catch(function(){if(errCb)errCb();});
+}
+
 /* EXPORTS */
 function saveToServer(name,content,okMsg,fallbackMsg){
+  if(ghToken()){
+    ghPut(name,content,okMsg+' → '+name,function(){
+      toast(okMsg+' → GitHub ['+name+']');
+    },function(){
+      toast('GitHub yazılamadı — tarayıcı indirme yapılıyor');
+      dl(name,content,'application/octet-stream');
+    });
+    return;
+  }
   if(!window.fetch)return false;
   fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,content:content})})
     .then(function(r){ if(!r.ok)throw new Error('HTTP '+r.status); return r.json(); })
@@ -531,9 +607,44 @@ window.saveJSON=function(){
     document.getElementById('opBadge').textContent='OP: '+currentData.op_numarasi;
   }
   var raw=JSON.stringify(currentData,null,2);
-  saveToServer('data/'+currentData.op_numarasi+'.json',raw,'📂 data/ kaydedildi','JSON indirildi (sunucu yok)');
-  toast('OP '+currentData.op_numarasi+' kaydediliyor...');
+  var fname='OP-'+currentData.op_numarasi.replace(/\W/g,'-')+'.json';
+  if(!ghToken()){
+    saveToServer('import/'+fname,raw,'📂 import/ kaydedildi','JSON indirildi (sunucu yok)');
+    toast('OP '+currentData.op_numarasi+' → import/');
+  }else{
+    ghPut('import/'+fname,raw,'davetiye kaydet: '+'OP-'+currentData.op_numarasi,function(){
+      toast('✓ import/'+fname+' → GitHub');
+      syncIndex();
+    },function(){
+      toast('GitHub yazma hatası — Sunucu?');
+    });
+  }
 };
+
+function syncIndex(){
+  ghApi('contents/list_fallback.json').then(function(r){
+    if(r.status===404)return null;
+    return r.json();
+  }).then(function(cur){
+    var list=[];
+    if(cur)try{list=JSON.parse(atob(cur.content.replace(/\n/g,'')));}catch(e){list=[];}
+    var v=currentData;
+    if(!list.some(function(m){return m.op_numarasi===v.op_numarasi;})){
+      list.push({
+        name:'OP-'+(v.op_numarasi||'').replace(/\W/g,'-')+'.json',
+        cift_adi:v.davet_sahibi_isimleri||'',
+        etkinlik_turu:v.etkinlik_turu||'',
+        tarih:(v.tarih||'').substring(0,10),
+        op_numarasi:v.op_numarasi||'',
+        olusturan:v.olusturan||''
+      });
+      ghPut('list_fallback.json',JSON.stringify(list,null,2),'liste güncelle: '+v.op_numarasi,function(){
+        toast('Ana liste de güncellendi ✓');
+      });
+    }
+    return;
+  });
+}
 
 window.exportHTML = function(){
   if(!templateCache){
@@ -546,7 +657,16 @@ window.exportHTML = function(){
     html = html.replace('</head>', '<script>var DAVETIYE_DATA='+dataJSON+';<\/script>\n</head>');
     html = html.replace("window.parent.postMessage({type:'davetiyeReady'},'*');",'');
     var fname='davetiye_'+slug(currentData.davet_sahibi_isimleri)+'_'+slug(currentData.op_numarasi||'OP')+'.html';
-    saveToServer('cikti/'+fname,html,'🖼 cikti/ kaydedildi','HTML davetiye indirildi (sunucu yok)');
+    if(ghToken()){
+      ghPut('import/'+fname,html,'html davetiye: '+fname,function(){
+        toast('✓ import/'+fname+' → GitHub');
+      },function(){
+        toast('GitHub yazma hatası — indirme yapılıyor');
+        dl(fname,html,'text/html');
+      });
+    }else{
+      saveToServer('import/'+fname,html,'🖼 import/ kaydedildi','HTML davetiye indirildi (sunucu yok)');
+    }
     toast('HTML davetiyesi oluşturuluyor...');
   }catch(e){toast('Hata: '+e.message);}
 };
@@ -588,12 +708,18 @@ bindInputs();
 
 var opParam = new URLSearchParams(window.location.search).get('op');
 if(opParam){
-  fetch('data/'+opParam+'.json').then(function(r){ if(!r.ok) throw 0; return r.text(); })
-    .then(function(txt){
-      applyJSONData(txt);
-      toast('OP '+opParam+' yüklendi ✓');
-    })
-    .catch(function(){ toast('data/'+opParam+'.json bulunamadı'); });
+  function opLoad(url,txt){
+    applyJSONData(txt);
+    toast('OP '+opParam+' yüklendi ✓');
+  }
+  function tryLoad(url){
+    return fetch(url).then(function(r){if(!r.ok)throw 0;return r.text();});
+  }
+  tryLoad('data/'+opParam+'.json').catch(function(){
+    return tryLoad('import/'+opParam+'.json');
+  }).then(function(txt){opLoad(opParam,txt);}).catch(function(){
+    toast('data/ veya import/ klasöründe '+opParam+'.json bulunamadı');
+  });
 }
 
 if(new URLSearchParams(window.location.search).get('import')==='1'){

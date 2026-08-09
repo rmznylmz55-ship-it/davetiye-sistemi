@@ -97,8 +97,17 @@ main{max-width:1100px;margin:0 auto}
     <a href="davetiye_editor.html">✏️ Editör</a>
     <a href="davetiye_editor.html?import=1">📥 İçe Aktar (import/)</a>
     <button onclick="refresh()">🔄 Yenile</button>
+    <button onclick="toggleGhBar()" id="ghToolBtn">🔗 GitHub</button>
     <input class="search" id="search" placeholder="Ara: çift adı, OP no, mekan..." oninput="render()">
     <span class="cnt" id="cntText"></span>
+  </div>
+  <div id="ghBar" style="display:none;margin-bottom:.8rem;border:1px solid var(--border);border-radius:8px;background:var(--bg2);padding:.6rem .8rem">
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <input id="ghToken" type="password" placeholder="github_pat_..." style="flex:1;background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;font-size:.7rem;color:var(--text)">
+      <a class="go" href="javascript:ghConnect()">🔗 Bağlan</a>
+      <button onclick="ghDisconnect()">✕ Bağlantıyı Kaldır</button>
+    </div>
+    <div style="font-size:.6rem;color:var(--dim);margin-top:.3rem" id="ghInfo"></div>
   </div>
 
   <div class="grid" id="grid"></div>
@@ -135,7 +144,7 @@ function card(m){
       '<div class="cfoot">'+
         '<a href="davetiye_editor.html?op='+encodeURIComponent(m.op_numarasi)+'" title="Düzenle">✏️ Düzenle</a>'+
         '<a href="'+opPreviewUrl(m.op_numarasi)+'" target="_blank" title="Yeni sekmede önizle">👁 Önizle</a>'+
-        '<a href="data/'+encodeURIComponent(m.name)+'" target="_blank" title="JSON verisini aç">📄 JSON</a>'+
+        '<a href="'+encodeURIComponent(m.name)+(m.name.indexOf('/')<0?'':'')+'" target="_blank" title="JSON verisini aç">📄 JSON</a>'+
         '<button onclick="genHtml(\''+encodeURIComponent(m.op_numarasi)+'\')" title="cikti/ klasörüne HTML üret">🚀</button>'+
         '<button onclick="del(\''+m.name.replace(/'/g,'\\\'')+'\')" title="Sil">🗑</button>'+
       '</div>'+
@@ -164,6 +173,9 @@ function render(){
 
 function refresh(){
   document.getElementById('cntText').textContent='yükleniyor...';
+  if(localStorage.getItem('gh_token')){
+    refreshFromGitHub();return;
+  }
   fetch('/list?dir=data&meta=1').then(function(r){if(!r.ok)throw 0;return r.json();})
     .then(function(list){LIST=list||[];render();})
     .catch(function(){
@@ -171,6 +183,38 @@ function refresh(){
         .then(function(list){LIST=list||[];render();document.getElementById('envInfo').textContent='⚠️ sunucu yok — statik liste';})
         .catch(function(){LIST=[];render();document.getElementById('envInfo').textContent='⚠️ sunucu yok, liste yüklenemedi';});
     });
+}
+
+function gitHubEntry(name,path){
+  return 'https://api.github.com/repos/rmznylmz55-ship-it/davetiye-sistemi/contents/'+path;
+}
+function refreshFromGitHub(){
+  var tok=localStorage.getItem('gh_token');
+  var headers={Accept:'application/vnd.github+json'};
+  if(tok)headers.Authorization='Bearer '+tok;
+  var done=0;
+  function metaOf(item){
+    var full=(item.path||item.name);
+    return fetch(item.download_url,{headers:headers}).then(function(r){if(!r.ok)throw 0;return r.json();})
+      .then(function(j){
+        var d=(j.veri)||j;
+        return {name:full,cift_adi:d.davet_sahibi_isimleri||j.cift_adi||'',etkinlik_turu:d.etkinlik_turu||j.etkinlik_turu||'',tarih:(d.tarih||j.tarih||'').substring(0,10),op_numarasi:d.op_numarasi||j.op_numarasi||'',olusturan:d.olusturan||j.olusturan||''};
+      }).catch(function(){return null;});
+  }
+  var found=[];
+  Promise.all(['import','data'].map(function(dir){
+    return fetch(gitHubEntry(dir)+'/',{headers:headers}).then(function(r){if(!r.ok)return [];return r.json();})
+      .then(function(items){return items;}).catch(function(){return [];});
+  })).then(function(alls){
+    var items=alls[0].concat(alls[1]).filter(function(i){return i.type==='file'&&/\.json$/i.test(i.name);});
+    return Promise.all(items.map(metaOf));
+  }).then(function(list){
+    found=list.filter(Boolean);
+    LIST=found;render();
+    document.getElementById('envInfo').textContent='✅ canlı — GitHub listeleniyor';
+  }).catch(function(){
+    LIST=[];render();document.getElementById('envInfo').textContent='⚠️ GitHub okunamadı';
+  });
 }
 
 function del(name){
@@ -190,7 +234,35 @@ function genHtml(op){
 var _t;
 function toast(m){var t=document.getElementById('toast');if(!t)return;t.textContent=m;t.classList.add('show');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('show');},2200);}
 
+function toggleGhBar(){
+  var bar=document.getElementById('ghBar');
+  bar.style.display=bar.style.display==='block'?'none':'block';
+  if(bar.style.display==='block'){document.getElementById('ghToken').value=localStorage.getItem('gh_token')||'';ghInfo();}
+}
+function ghInfo(){
+  var info=document.getElementById('ghInfo');
+  if(localStorage.getItem('gh_token')){
+    info.textContent='✅ GitHub bağlı — liste sosyal olarak yenilenir. (Public repo için token gerekmez, sadece düzenlemek için gerekir)';
+    document.getElementById('ghToolBtn').textContent='🔗 GitHub ✓';
+  }else{
+    info.textContent='Token yok: liste public repo üzerinden okunur. Düzenleme/kaydetme için editörde token gir. Bir özel erişim tokeni oluştur: github.com/settings/tokens → "repo" yetkisi.';
+    document.getElementById('ghToolBtn').textContent='🔗 GitHub';
+  }
+}
+window.ghConnect=function(){
+  var tok=document.getElementById('ghToken').value.trim();
+  if(!tok){toast('Token gir');return;}
+  localStorage.setItem('gh_token',tok);
+  ghInfo();refresh();toast('GitHub bağlandı ✓');
+};
+window.ghDisconnect=function(){
+  localStorage.removeItem('gh_token');
+  document.getElementById('ghToken').value='';
+  ghInfo();refresh();toast('GitHub bağlantısı kaldırıldı');
+};
+
 refresh();
+ghInfo();
 </script>
 
 <div class="toast" id="toast"></div>

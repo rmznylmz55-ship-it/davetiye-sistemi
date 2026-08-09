@@ -1400,14 +1400,20 @@ function init(){
   } else {
     var op = new URLSearchParams(window.location.search).get('op');
     if(op){
-      fetch('data/'+op+'.json').then(function(r){ if(!r.ok) throw 0; return r.json(); })
-        .then(function(j){
-          var v = j.veri || j;
-          if(j.veri){ receivedData = convertIndexData(j); } else { receivedData = v; }
-          render(receivedData);
-          updateOGMeta(receivedData);
-          openLock();
-        })
+      function pvLoad(txt){
+        var j=null;try{j=JSON.parse(txt);}catch(e){ }
+        if(!j){openLock();return;}
+        var v = j.veri || j;
+        if(j.veri){ receivedData = convertIndexData(j); } else { receivedData = v; }
+        render(receivedData);
+        updateOGMeta(receivedData);
+        openLock();
+      }
+      function pvFetch(url){
+        return fetch(url).then(function(r){ if(!r.ok) throw 0; return r.text(); });
+      }
+      pvFetch('data/'+op+'.json').catch(function(){ return pvFetch('import/'+op+'.json'); })
+        .then(pvLoad)
         .catch(function(){ openLock(); });
     } else {
       window.parent.postMessage({type:'davetiyeReady'}, '*');
