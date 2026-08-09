@@ -551,7 +551,7 @@ function ghRefresh(){
   fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO,
     {headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+ghToken()}})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(function(j){info.textContent='✅ '+j.full_name+' — '+j.default_branch+' dalına yazılır.';document.getElementById('ghBtn').textContent='🔗 GitHub ✓';})
+    .then(function(j){info.textContent='✅ '+j.full_name+' — yazma denemesi: '+j.permissions.push? 'izinli':'izinsiz';document.getElementById('ghBtn').textContent='🔗 GitHub ✓';})
     .catch(function(){info.textContent='❌ Bağlanamadı. Token geçersiz veya yetki yok.';});
 }
 function ghApi(path,method,body){
@@ -574,9 +574,11 @@ function ghPut(relPath,content,msg,okCb,errCb){
     var body={message:msg||('güncelle: '+relPath),content:b64(content),branch:GH_BRANCH};
     if(cur&&cur.sha)body.sha=cur.sha;
     return ghApi('contents/'+relPath,'PUT',body);
-  }).then(function(r){if(!r.ok)throw 0;return r.json();})
+  }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(){if(okCb)okCb();})
-    .catch(function(){if(errCb)errCb();});
+    .catch(function(err){
+      if(errCb)errCb({code:err&&err.message,msg:'GitHub yazamadı. İzinler: github.com/settings/tokens?type=beta → davetiye-sistemi → Contents → Read and write'});
+    });
 }
 
 /* EXPORTS */
@@ -584,9 +586,8 @@ function saveToServer(name,content,okMsg,fallbackMsg){
   if(ghToken()){
     ghPut(name,content,okMsg+' → '+name,function(){
       toast(okMsg+' → GitHub ['+name+']');
-    },function(){
-      toast('GitHub yazılamadı — tarayıcı indirme yapılıyor');
-      dl(name,content,'application/octet-stream');
+    },function(err){
+      toast(err&&err.msg?err.msg:'GitHub yazma hatası');
     });
     return;
   }
@@ -615,8 +616,8 @@ window.saveJSON=function(){
     ghPut('import/'+fname,raw,'davetiye kaydet: '+'OP-'+currentData.op_numarasi,function(){
       toast('✓ import/'+fname+' → GitHub');
       syncIndex();
-    },function(){
-      toast('GitHub yazma hatası — Sunucu?');
+    },function(err){
+      toast(err&&err.msg?err.msg:'GitHub yazma hatası');
     });
   }
 };
