@@ -1,9 +1,28 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { execFile } = require('child_process');
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || process.argv[2] || '3000', 10);
+
+/* --- GIT OTOMATIK PUSH ---
+   Kaydetme işlemi sonrası dosya, yerel repo klasörüne yazıldıktan sonra
+   otomatik olarak git add + commit + push yapılır. Böylece kullanıcının
+   token/ayar ile uğraşması gerekmez (gh CLI zaten oturum aciktir). */
+function gitCommitAll(msg, cb){
+  const msgSafe = String(msg||'güncelleme').replace(/\r?\n/g,' ').slice(0,120);
+  execFile('git',['add','-A'],{cwd:ROOT},(errA)=>{
+    if(errA)return cb(errA);
+    execFile('git',['commit','-m',msgSafe],{cwd:ROOT},(errC)=>{
+      // commit yoksa "nothing to commit" hatasi normaldir; yine de push deneriz
+      execFile('git',['push','origin','main'],{cwd:ROOT},(errP)=>{
+        if(errP)return cb(errP);
+        cb(null);
+      });
+    });
+  });
+}
 
 const MIME = {
   '.html':'text/html; charset=utf-8',
@@ -82,8 +101,17 @@ const server = http.createServer((req,res)=>{
         const content = String(data.content==null ? '' : data.content);
         fs.writeFile(filePath, content, 'utf8', err=>{
           if(err){ res.writeHead(500); res.end('yazma hatasi: '+err.message); return; }
-          res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});
-          res.end(JSON.stringify({ok:true, file:(rel.dir?rel.dir+'/':'')+rel.name, bytes:Buffer.byteLength(content,'utf8'), path:filePath}));
+          const payload = {ok:true, file:(rel.dir?rel.dir+'/':'')+rel.name, bytes:Buffer.byteLength(content,'utf8'), path:filePath};
+          gitCommitAll('davetiye guncelle: '+(data.name||rel.name), (gerr)=>{
+            if(gerr){
+              payload.git=null;
+              payload.gitError='otomatik push yapilamadi: '+String(gerr.message||gerr).slice(0,120);
+            }else{
+              payload.git='pushed';
+            }
+            res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});
+            res.end(JSON.stringify(payload));
+          });
         });
       }catch(e){ res.writeHead(400); res.end('gecersiz istek'); }
     });
