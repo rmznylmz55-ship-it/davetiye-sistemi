@@ -3,7 +3,6 @@ node_modules/
 npm-debug.log*
 
 # Geçici sunucu / çalışma kopyaları
-list_fallback.json
 tmp/
 *.tmp
 
