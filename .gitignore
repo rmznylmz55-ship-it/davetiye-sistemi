@@ -1,0 +1,16 @@
+# Node / bağımlılıklar
+node_modules/
+npm-debug.log*
+
+# Geçici sunucu / çalışma kopyaları
+list_fallback.json
+tmp/
+*.tmp
+
+# Sistem dosyaları
+Thumbs.db
+Desktop.ini
+
+# Yedekler ve üretilen çıktılar sürüme dahil edilmez
+_yedek/
+cikti/

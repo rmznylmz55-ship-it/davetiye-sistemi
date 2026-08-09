@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Davetiye Yönetim Sistemi</title>
+<style>
+:root{
+  --bg1:#0a0e1a;--bg2:#0e1424;--bg3:#121a2e;--border:#1e2942;
+  --gold:#c9a75f;--gold2:#e8d5a4;--dim:#8b94ad;--text:#e8eaf0;--red:#e06c5f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(212,168,75,.05) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 90%, rgba(100,120,200,.03) 0%, transparent 50%),
+    var(--bg1);
+  color:var(--text);
+  font-family:'Segoe UI',system-ui,sans-serif;
+  min-height:100vh;padding:2rem 1.5rem;
+}
+header{max-width:1100px;margin:0 auto 1.4rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+header h1{font-weight:300;letter-spacing:.5px;font-size:1.3rem}
+header h1 b{color:var(--gold);font-weight:500}
+.badge{font-size:.6rem;color:var(--dim);border:1px solid var(--border);border-radius:20px;padding:.15rem .6rem}
+main{max-width:1100px;margin:0 auto}
+
+/* AÇIKLAMA ŞERIDI */
+.hero{
+  border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;
+  background:linear-gradient(135deg,rgba(18,26,46,.9),rgba(14,20,36,.7));
+  margin-bottom:1.2rem;
+}
+.hero p{font-size:.8rem;color:var(--dim);line-height:1.6}
+.hero p b{color:var(--gold2);font-weight:500}
+
+/* TOOLBAR */
+.tools{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.tools a,.tools button{
+  padding:.45rem .95rem;border-radius:7px;font-size:.72rem;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg3);color:var(--text);text-decoration:none;
+  transition:.2s;
+}
+.tools a:hover,.tools button:hover{border-color:var(--gold);color:var(--gold2)}
+.tools .go{background:linear-gradient(135deg,#2a2f45,#1a2138);border-color:var(--gold);font-weight:600}
+.tools .danger:hover{border-color:var(--red);color:var(--red)}
+.tools .search{flex:1;min-width:180px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:.45rem .8rem;font-size:.72rem;color:var(--text);outline:none}
+.tools .search:focus{border-color:var(--gold)}
+.cnt{font-size:.68rem;color:var(--dim);align-self:center}
+
+/* KART IZGARA */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.9rem}
+.card{
+  border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  background:var(--bg2);transition:.2s;display:flex;flex-direction:column;
+}
+.card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.cthumb{height:110px;background-size:cover;background-position:center;position:relative}
+.cthumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,var(--bg2))}
+.opchip{position:absolute;top:.5rem;left:.5rem;z-index:2;font-size:.55rem;background:rgba(10,14,26,.75);border:1px solid rgba(201,167,95,.4);color:var(--gold);padding:.12rem .5rem;border-radius:20px}
+.cbody{padding:.85rem;display:flex;flex-direction:column;gap:.25rem;flex:1}
+.ctitle{font-size:.86rem;font-weight:500;color:var(--gold2)}
+.cmeta{font-size:.62rem;color:var(--dim);line-height:1.7}
+.cmeta span{display:inline-flex;align-items:center;gap:.25rem;margin-right:.6rem}
+.cfoot{margin-top:.6rem;display:flex;gap:.3rem;flex-wrap:wrap;padding-top:.6rem;border-top:1px solid var(--border)}
+.cfoot a,.cfoot button{
+  flex:1;min-width:70px;text-align:center;font-size:.6rem;padding:.3rem .4rem;cursor:pointer;
+  border:1px solid var(--border);border-radius:5px;background:var(--bg3);color:var(--text);text-decoration:none;transition:.2s;
+}
+.cfoot a:hover{border-color:var(--gold);color:var(--gold2)}
+.cfoot button:hover{border-color:var(--red);color:var(--red)}
+
+/* BOŞ DURUM */
+.empty{
+  border:1px dashed var(--border);border-radius:10px;padding:3rem 1rem;text-align:center;color:var(--dim);font-size:.78rem;
+}
+.empty b{color:var(--gold2);display:block;font-size:.95rem;margin-bottom:.3rem}
+.empty a{color:var(--gold);margin-top:.5rem;display:inline-block;font-size:.72rem;border:1px solid var(--gold);border-radius:6px;padding:.4rem 1rem;text-decoration:none}
+
+.foot{max-width:1100px;margin:1.6rem auto 0;font-size:.6rem;color:var(--dim);border-top:1px solid var(--border);padding-top:.8rem;line-height:1.7}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><b>Davetiye</b> Yönetim Sistemi</h1>
+  <span class="badge" id="cntBadge">0 davetiye</span>
+</header>
+
+<main>
+  <div class="hero">
+    <p><b>✒️ Şablon üretimi + görüntüleme</b> — Oluşturduğunuz her davetiyenin HTML şablonu ve <b>dolu JSON verisi</b> <code>data/</code> klasöründe tutulur. Çıktı HTML dosyaları <code>cikti/</code> klasörüne üretilir. Bir davetiyeyi seçip düzenleyebilir, canlı önizleyebilir veya HTML olarak dışa aktarabilirsiniz.</p>
+  </div>
+
+  <div class="tools">
+    <a class="go" href="davetiye_editor.html?yeni=1">＋ Yeni Davetiye</a>
+    <a href="davetiye_editor.html">✏️ Editör</a>
+    <a href="davetiye_editor.html?import=1">📥 İçe Aktar (import/)</a>
+    <button onclick="refresh()">🔄 Yenile</button>
+    <input class="search" id="search" placeholder="Ara: çift adı, OP no, mekan..." oninput="render()">
+    <span class="cnt" id="cntText"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="foot">
+    data/ → davetiye JSON verileri &nbsp;·&nbsp; cikti/ → HTML davetiyeler &nbsp;·&nbsp; import/ → içe aktarma klasörü &nbsp;·&nbsp;
+    <span id="envInfo">—</span>
+  </div>
+</main>
+
+<script>
+var LIST = [];
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function opPreviewUrl(op){
+  return 'davetiye_preview.html?op='+encodeURIComponent(op);
+}
+
+function card(m){
+  var tarih = m.tarih ? new Date(m.tarih).toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
+  var bg = m.thumb || 'linear-gradient(135deg,#1a2138,#0e1424)';
+  return '<div class="card">'+
+    '<div class="cthumb" style="background-image:url(\''+bg+'\');background:linear-gradient(135deg,#1a2138,#0e1424)">'+
+      '<span class="opchip">'+(m.op_numarasi||'---')+'</span>'+
+    '</div>'+
+    '<div class="cbody">'+
+      '<div class="ctitle">'+esc(m.cift_adi||'İsimsiz Davetiye')+'</div>'+
+      '<div class="cmeta">'+
+        '<span>🎯 '+esc(m.etkinlik_turu||'—')+'</span>'+
+        (tarih?'<span>📅 '+esc(tarih)+'</span>':'')+
+        (m.olusturan?'<span>👤 '+esc(m.olusturan)+'</span>':'')+
+      '</div>'+
+      '<div class="cfoot">'+
+        '<a href="davetiye_editor.html?op='+encodeURIComponent(m.op_numarasi)+'" title="Düzenle">✏️ Düzenle</a>'+
+        '<a href="'+opPreviewUrl(m.op_numarasi)+'" target="_blank" title="Yeni sekmede önizle">👁 Önizle</a>'+
+        '<a href="data/'+encodeURIComponent(m.name)+'" target="_blank" title="JSON verisini aç">📄 JSON</a>'+
+        '<button onclick="genHtml(\''+encodeURIComponent(m.op_numarasi)+'\')" title="cikti/ klasörüne HTML üret">🚀</button>'+
+        '<button onclick="del(\''+m.name.replace(/'/g,'\\\'')+'\')" title="Sil">🗑</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function render(){
+  var q=(document.getElementById('search').value||'').toLowerCase().trim();
+  var grid=document.getElementById('grid');
+  var items=LIST.filter(function(m){
+    if(!q)return true;
+    return (m.cift_adi||'').toLowerCase().indexOf(q)>=0 ||
+           (m.op_numarasi||'').toLowerCase().indexOf(q)>=0 ||
+           (m.etkinlik_turu||'').toLowerCase().indexOf(q)>=0 ||
+           (m.olusturan||'').toLowerCase().indexOf(q)>=0;
+  });
+  document.getElementById('cntText').textContent=items.length+' / '+LIST.length;
+  document.getElementById('cntBadge').textContent=LIST.length+' davetiye';
+  if(!items.length){
+    grid.innerHTML='<div class="empty" style="grid-column:1/-1"><b>'+esc((LIST.length?'Sonuç bulunamadı':'Henüz davetiye yok'))+'</b>'+(LIST.length?'Farklı bir arama deneyin.':'İlk davetiyenizi oluşturun.')+'<br><a href="davetiye_editor.html?yeni=1">＋ Yeni Davetiye Oluştur</a></div>';
+    return;
+  }
+  grid.innerHTML=items.map(card).join('');
+}
+
+function refresh(){
+  document.getElementById('cntText').textContent='yükleniyor...';
+  fetch('/list?dir=data&meta=1').then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(function(list){LIST=list||[];render();})
+    .catch(function(){
+      fetch('list_fallback.json').then(function(r){if(!r.ok)throw 0;return r.json();})
+        .then(function(list){LIST=list||[];render();document.getElementById('envInfo').textContent='⚠️ sunucu yok — statik liste';})
+        .catch(function(){LIST=[];render();document.getElementById('envInfo').textContent='⚠️ sunucu yok, liste yüklenemedi';});
+    });
+}
+
+function del(name){
+  if(!confirm('Bu davetiyenin JSON verisi silinsin mi?\n('+name+')'))return;
+  fetch('/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'data/'+name})})
+    .then(function(r){if(!r.ok)throw 0;return r.json();})
+    .then(function(){toast('Silindi ✓');refresh();})
+    .catch(function(){toast('Silinemedi — sunucu yok');});
+}
+
+function genHtml(op){
+  fetch('/gen?op='+encodeURIComponent(op)).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(res){ toast(res.file?('HTML üretildi → cikti/'+res.file):'Üretildi ✓'); refresh(); })
+    .catch(function(){ toast('HTML üretimi sunucu gerektirir'); });
+}
+
+var _t;
+function toast(m){var t=document.getElementById('toast');if(!t)return;t.textContent=m;t.classList.add('show');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('show');},2200);}
+
+refresh();
+</script>
+
+<div class="toast" id="toast"></div>
+<style>#toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);z-index:999;padding:.4rem .9rem;border-radius:5px;font-size:.65rem;background:var(--bg3);border:1px solid var(--gold);box-shadow:0 4px 20px rgba(0,0,0,.5);opacity:0;transition:opacity .3s;pointer-events:none}#toast.show{opacity:1}</style>
+</body>
+</html>
